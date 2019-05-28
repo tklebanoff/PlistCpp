@@ -14,10 +14,6 @@ IF(APPLE)
 		set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lstdc++")
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lstdc++")
 	endif()
-ELSEIF(MSVC)
-	set (ARCH_DIR Windows)
-	set (SCRIPT_EXT bat)
-	set (MY_BUILD_TYPE "\$(Configuration)")
 ELSE()
 	set (ARCH_DIR Linux)
 ENDIF()
@@ -32,11 +28,13 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${EXTRA_CXX_FLAGS} -Wall -DT
 add_executable(runTests src/runTests.cpp src/plistTests.cpp src/pugixml.cpp
     src/Plist.cpp src/PlistDate.cpp)
 
-IF(MSVC10)
-	target_link_libraries(runTests UnitTest++.vsnet2010-${MY_BUILD_TYPE}.lib) 
-ELSE()
-	target_link_libraries(runTests UnitTest++)
-ENDIF()
+set(libUnitTest_DIR "/hackmitel/tools/unittest-cpp")
+
+find_library(LIBUNITTEST_CPP         libUnitTest++.a         "${libUnitTest_DIR}/lib"                              ) 
+
+message(STATUS "Found (LIBUNITTEST_CPP): ${LIBUNITTEST_CPP}")
+
+target_link_libraries(runTests ${LIBUNITTEST_CPP})
 
 ADD_CUSTOM_COMMAND(
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -44,3 +42,19 @@ ADD_CUSTOM_COMMAND(
 	POST_BUILD
 	COMMAND ./runTests.${SCRIPT_EXT} ${MY_BUILD_TYPE} ${ARCH_DIR}
 	)
+
+set(HDRS 
+    src/base64.hpp
+    src/Plist.hpp
+    src/PlistDate.hpp
+    src/pugiconfig.hpp
+    src/pugixml.hpp)
+
+set(SRCS 
+    src/pugixml.cpp)
+
+add_library(plistpp ${SRCS})
+
+foreach(x ${HDRS})
+    install(FILES ${x} DESTINATION include)
+endforeach(x)
